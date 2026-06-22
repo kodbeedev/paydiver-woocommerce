@@ -1,15 +1,15 @@
 <?php
 /**
- * Minimal, self-contained Jomabee API client (no Composer dependency).
+ * Minimal, self-contained Paydiver API client (no Composer dependency).
  *
- * @package Jomabee\WooCommerce
+ * @package Paydiver\WooCommerce
  */
 
 if (! defined('ABSPATH')) {
     exit;
 }
 
-class Jomabee_Api
+class Paydiver_Api
 {
     public function __construct(
         private string $base_url,
@@ -47,7 +47,7 @@ class Jomabee_Api
         $body = json_decode((string) wp_remote_retrieve_body($response), true);
 
         if (! is_array($body) || $code >= 400 || (($body['success'] ?? false) === false)) {
-            $message = $body['error']['message'] ?? 'Jomabee API request failed.';
+            $message = $body['error']['message'] ?? 'Paydiver API request failed.';
             throw new Exception((string) $message);
         }
 

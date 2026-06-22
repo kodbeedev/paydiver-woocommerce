@@ -1,21 +1,21 @@
 <?php
 /**
- * Jomabee redirect payment gateway for WooCommerce.
+ * Paydiver redirect payment gateway for WooCommerce.
  *
- * @package Jomabee\WooCommerce
+ * @package Paydiver\WooCommerce
  */
 
 if (! defined('ABSPATH')) {
     exit;
 }
 
-class WC_Gateway_Jomabee extends WC_Payment_Gateway
+class WC_Gateway_Paydiver extends WC_Payment_Gateway
 {
     public function __construct()
     {
-        $this->id                 = 'jomabee';
-        $this->method_title       = __('Jomabee', 'jomabee-woocommerce');
-        $this->method_description = __('Accept bKash, Nagad, Rocket and Upay payments via Jomabee.', 'jomabee-woocommerce');
+        $this->id                 = 'paydiver';
+        $this->method_title       = __('Paydiver', 'paydiver-woocommerce');
+        $this->method_description = __('Accept bKash, Nagad, Rocket and Upay payments via Paydiver.', 'paydiver-woocommerce');
         $this->has_fields         = false;
         $this->supports           = ['products'];
 
@@ -26,56 +26,56 @@ class WC_Gateway_Jomabee extends WC_Payment_Gateway
         $this->description = $this->get_option('description');
 
         add_action('woocommerce_update_options_payment_gateways_' . $this->id, [$this, 'process_admin_options']);
-        // Server-to-server webhook: https://site/?wc-api=jomabee
-        add_action('woocommerce_api_jomabee', [$this, 'handle_webhook']);
+        // Server-to-server webhook: https://site/?wc-api=paydiver
+        add_action('woocommerce_api_paydiver', [$this, 'handle_webhook']);
     }
 
     public function init_form_fields(): void
     {
         $this->form_fields = [
             'enabled' => [
-                'title'   => __('Enable/Disable', 'jomabee-woocommerce'),
+                'title'   => __('Enable/Disable', 'paydiver-woocommerce'),
                 'type'    => 'checkbox',
-                'label'   => __('Enable Jomabee', 'jomabee-woocommerce'),
+                'label'   => __('Enable Paydiver', 'paydiver-woocommerce'),
                 'default' => 'no',
             ],
             'title' => [
-                'title'       => __('Title', 'jomabee-woocommerce'),
+                'title'       => __('Title', 'paydiver-woocommerce'),
                 'type'        => 'text',
-                'default'     => __('Mobile Banking (Jomabee)', 'jomabee-woocommerce'),
+                'default'     => __('Mobile Banking (Paydiver)', 'paydiver-woocommerce'),
                 'desc_tip'    => true,
-                'description' => __('Payment method title shown at checkout.', 'jomabee-woocommerce'),
+                'description' => __('Payment method title shown at checkout.', 'paydiver-woocommerce'),
             ],
             'description' => [
-                'title'   => __('Description', 'jomabee-woocommerce'),
+                'title'   => __('Description', 'paydiver-woocommerce'),
                 'type'    => 'textarea',
-                'default' => __('Pay securely with bKash, Nagad, Rocket or Upay.', 'jomabee-woocommerce'),
+                'default' => __('Pay securely with bKash, Nagad, Rocket or Upay.', 'paydiver-woocommerce'),
             ],
             'base_url' => [
-                'title'       => __('Jomabee Base URL', 'jomabee-woocommerce'),
+                'title'       => __('Paydiver Base URL', 'paydiver-woocommerce'),
                 'type'        => 'text',
                 'default'     => 'https://pay.kodbee.com',
-                'description' => __('Your Jomabee instance URL.', 'jomabee-woocommerce'),
+                'description' => __('Your Paydiver instance URL.', 'paydiver-woocommerce'),
             ],
             'api_key' => [
-                'title' => __('API Key', 'jomabee-woocommerce'),
+                'title' => __('API Key', 'paydiver-woocommerce'),
                 'type'  => 'text',
             ],
             'secret_key' => [
-                'title' => __('Secret Key', 'jomabee-woocommerce'),
+                'title' => __('Secret Key', 'paydiver-woocommerce'),
                 'type'  => 'password',
             ],
             'webhook_secret' => [
-                'title'       => __('Webhook Secret', 'jomabee-woocommerce'),
+                'title'       => __('Webhook Secret', 'paydiver-woocommerce'),
                 'type'        => 'password',
-                'description' => __('Used to verify webhook signatures. Leave blank to use the Secret Key.', 'jomabee-woocommerce'),
+                'description' => __('Used to verify webhook signatures. Leave blank to use the Secret Key.', 'paydiver-woocommerce'),
             ],
         ];
     }
 
-    private function api(): Jomabee_Api
+    private function api(): Paydiver_Api
     {
-        return new Jomabee_Api(
+        return new Paydiver_Api(
             (string) $this->get_option('base_url'),
             (string) $this->get_option('api_key'),
             (string) $this->get_option('secret_key')
@@ -99,26 +99,26 @@ class WC_Gateway_Jomabee extends WC_Payment_Gateway
         try {
             $data = $this->api()->create_payment([
                 'amount'         => (float) $order->get_total(),
-                'product_name'   => sprintf(/* translators: %s order number */ __('Order #%s', 'jomabee-woocommerce'), $order->get_order_number()),
+                'product_name'   => sprintf(/* translators: %s order number */ __('Order #%s', 'paydiver-woocommerce'), $order->get_order_number()),
                 'customer_name'  => trim($order->get_billing_first_name() . ' ' . $order->get_billing_last_name()),
                 'customer_email' => $order->get_billing_email(),
                 'redirect_url'   => $this->get_return_url($order),
-                'callback_url'   => WC()->api_request_url('jomabee'),
+                'callback_url'   => WC()->api_request_url('paydiver'),
             ]);
         } catch (Exception $e) {
-            wc_add_notice(__('Payment error: ', 'jomabee-woocommerce') . $e->getMessage(), 'error');
+            wc_add_notice(__('Payment error: ', 'paydiver-woocommerce') . $e->getMessage(), 'error');
 
             return ['result' => 'failure'];
         }
 
         if (empty($data['invoice_id']) || empty($data['payment_url'])) {
-            wc_add_notice(__('Could not start the Jomabee payment.', 'jomabee-woocommerce'), 'error');
+            wc_add_notice(__('Could not start the Paydiver payment.', 'paydiver-woocommerce'), 'error');
 
             return ['result' => 'failure'];
         }
 
-        $order->update_meta_data('_jomabee_invoice_id', sanitize_text_field((string) $data['invoice_id']));
-        $order->update_status('pending', __('Awaiting Jomabee payment.', 'jomabee-woocommerce'));
+        $order->update_meta_data('_paydiver_invoice_id', sanitize_text_field((string) $data['invoice_id']));
+        $order->update_status('pending', __('Awaiting Paydiver payment.', 'paydiver-woocommerce'));
         $order->save();
 
         return [
@@ -133,9 +133,9 @@ class WC_Gateway_Jomabee extends WC_Payment_Gateway
     public function handle_webhook(): void
     {
         $raw       = file_get_contents('php://input') ?: '';
-        $signature = isset($_SERVER['HTTP_X_JOMABEE_SIGNATURE']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_X_JOMABEE_SIGNATURE'])) : '';
+        $signature = isset($_SERVER['HTTP_X_PAYDIVER_SIGNATURE']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_X_PAYDIVER_SIGNATURE'])) : '';
 
-        $api = new Jomabee_Api(
+        $api = new Paydiver_Api(
             (string) $this->get_option('base_url'),
             (string) $this->get_option('api_key'),
             $this->webhook_secret()
@@ -155,7 +155,7 @@ class WC_Gateway_Jomabee extends WC_Payment_Gateway
         $invoice_id = (string) ($event['invoice_id'] ?? '');
         $orders = wc_get_orders([
             'limit'      => 1,
-            'meta_key'   => '_jomabee_invoice_id',
+            'meta_key'   => '_paydiver_invoice_id',
             'meta_value' => $invoice_id,
         ]);
 
@@ -169,7 +169,7 @@ class WC_Gateway_Jomabee extends WC_Payment_Gateway
             $order->payment_complete((string) ($event['trx_id'] ?? ''));
             $order->add_order_note(sprintf(
                 /* translators: 1 gateway, 2 trx id */
-                __('Jomabee payment verified (%1$s, TrxID %2$s).', 'jomabee-woocommerce'),
+                __('Paydiver payment verified (%1$s, TrxID %2$s).', 'paydiver-woocommerce'),
                 (string) ($event['gateway'] ?? '-'),
                 (string) ($event['trx_id'] ?? '-')
             ));
